@@ -30,10 +30,10 @@ export async function get(hash: string) {
 }
 
 export async function addJson(data: Object) {
-  return this.add(util.decodeUTF8(JSON.stringify(data)));
+  return add(util.decodeUTF8(JSON.stringify(data)));
 }
 
 export async function getJson(hash: string) {
-  const buffer = await this.get(hash);
+  const buffer = await get(hash);
   return JSON.parse(util.encodeUTF8(new Uint8Array(buffer)));
 }

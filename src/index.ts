@@ -32,7 +32,7 @@ program
       console.log("Unlocking ERASE...");
       await new Promise(resolve => {
         contracts.erase.methods
-          .approveAll(contracts.daily.address)
+          .approveAll(contracts.daily._address)
           .send({
             from: accounts[0]
           })
@@ -54,7 +54,7 @@ program
           new BN(start),
           new BN(start + 3600), // 1 hour
           new BN(start + 3600 * 24), // 24 hours
-          web3.utils.toWei(new BN(0), "ether"), // 0 ERASE for now
+          web3.utils.toWei(new BN(10), "ether"), // 10 ERASE
           crypto.bytesToHex(crypto.base58ToBytes(ipfsHash))
         )
         .send({

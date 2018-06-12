@@ -1,0 +1,63 @@
+{
+  "version": "0.0.1",
+  "name": "erasure-cli",
+  "devDependencies": {
+    "@types/jest": "^23.0.0",
+    "@types/node": "^10.3.2",
+    "jest": "^23.1.0",
+    "ts-jest": "^22.4.6",
+    "typescript": "^2.9.1"
+  },
+  "main": "dist/index.js",
+  "typings": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "devlink": "chmod a+x dist/index.js && ln -s -f $(pwd)/dist/index.js node_modules/.bin/erasure",
+    "postbuild": "npm run devlink",
+    "watch": "tsc && npm run devlink && tsc --watch"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
+    "testPathIgnorePatterns": [
+      "/(node_modules|dist)/"
+    ],
+    "testMatch": [
+      "**/*.test.+(ts|tsx|js)"
+    ]
+  },
+  "dependencies": {
+    "@types/bn.js": "^4.11.0",
+    "@types/form-data": "^2.2.1",
+    "@types/node-fetch": "^2.1.1",
+    "bignumber.js": "^7.2.1",
+    "bn.js": "^4.11.8",
+    "bs58": "^4.0.1",
+    "commander": "^2.15.1",
+    "dotenv": "^6.0.0",
+    "erasure-merkle": "^0.0.2",
+    "form-data": "^2.3.2",
+    "js-sha3": "^0.7.0",
+    "node-fetch": "^2.1.2",
+    "truffle-hdwallet-provider": "^0.0.5",
+    "tweetnacl": "^1.0.0",
+    "tweetnacl-util": "^0.15.0",
+    "web3": "^1.0.0-beta.34"
+  }
+}

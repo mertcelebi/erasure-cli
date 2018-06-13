@@ -2,7 +2,7 @@ import nacl from "tweetnacl";
 import util from "tweetnacl-util";
 import { keccak256 } from "js-sha3";
 import bs58 from "bs58";
-import BN from "bignumber.js";
+import BN from "bn.js";
 
 export function bnToBytes(bn: BN, length: number) {
   const zeros = new Array(length).fill("00").join("");
@@ -74,6 +74,31 @@ export function buildMessageSecret(
   sellerSecret: Uint8Array
 ) {
   return sha3(concat(nonce, sellerSecret));
+}
+
+export function encryptPredictionForRound(
+  prediction: number,
+  nonce: Uint8Array,
+  roundPublicKey: Uint8Array,
+  predictorSecretKey: Uint8Array
+) {
+  const dataBytes = new Uint8Array([prediction]);
+  return nacl.box(dataBytes, nonce, roundPublicKey, predictorSecretKey);
+}
+
+export function decryptPredictionForRound(
+  data: Uint8Array,
+  nonce: Uint8Array,
+  predictorPublicKey: Uint8Array,
+  roundSecretKey: Uint8Array
+): null | number {
+  const decrypted = nacl.box.open(
+    data,
+    nonce,
+    predictorPublicKey,
+    roundSecretKey
+  );
+  return decrypted ? decrypted[0] : null;
 }
 
 export function encryptMessage(

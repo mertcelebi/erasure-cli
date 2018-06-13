@@ -47,6 +47,7 @@ interface Web3TransactionPromise extends Promise<string> {
 interface Web3Transaction<T = string> {
   send(opts: any): Web3TransactionPromise;
   call(): Promise<T>;
+  estimateGas(): Promise<BN>;
 }
 
 interface ErasureDailyContract {
@@ -56,6 +57,11 @@ interface ErasureDailyContract {
     getOpenRounds(): Web3Transaction<BN[]>;
     getPrediction(predictionId: BN): Web3Transaction<Prediction>;
     getPredictionsPerRound(roundId: BN): Web3Transaction<BN[]>;
+    getUserRewardPerRound(
+      address: string,
+      roundId: BN,
+      proof: string[]
+    ): Web3Transaction<BN>;
     createPrediction(
       roundId: BN,
       nonce: BN,

@@ -8,7 +8,7 @@ import * as nacl from "tweetnacl";
 import * as crypto from "./crypto";
 import * as ipfs from "./ipfs";
 import BN from "bn.js";
-import Merkle from "erasure-merkle";
+import Merkle, { checkProof } from "erasure-merkle";
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
 
@@ -220,43 +220,101 @@ program
 
         const winningOption = new BN(options.winner);
 
+        const toOutput = (bn: BN) => {
+          return web3.utils.fromWei(bn, "ether");
+        };
+
         console.log({
           roundId,
           revealSecret: crypto.bytesToBn(secretKey),
           winningOption,
-          totalStakedByWinners,
-          totalStakedByLosers,
+          totalStakedByWinners: toOutput(totalStakedByWinners),
+          totalStakedByLosers: toOutput(totalStakedByLosers),
           winningMerkleRoot: "0x" + winningTree.rootHash,
           losingMerkleRoot: "0x" + losingTree.rootHash,
           from: accounts[0]
         });
 
-        const result = await new Promise<{ roundId: string }>(resolve => {
-          contracts.daily.methods
-            .updateRoundResults(
-              roundId,
-              crypto.bytesToBn(secretKey),
-              winningOption,
-              totalStakedByWinners,
-              totalStakedByLosers,
-              "0x" + winningTree.rootHash,
-              "0x" + losingTree.rootHash
-            )
-            .send({
-              from: accounts[0]
-            })
-            .on("transactionHash", (hash: string) => {
-              console.log("Transaction hash: ", hash);
-            })
-            .on("receipt", (receipt: any) => {
-              resolve(receipt.events.RoundResultsUpdate.returnValues);
-            })
-            .on("confirmation", () => {
-              console.log("Confirmed.");
-            });
-        });
+        if (parseInt(round.revealsAt) > new Date().getTime() / 1000) {
+          console.log("Round isn't ready to be revealed yet.");
+        } else if (round.revealSecret === "0") {
+          const result = await new Promise<{ roundId: string }>(
+            async resolve => {
+              const tx = contracts.daily.methods.updateRoundResults(
+                roundId,
+                crypto.bytesToBn(secretKey),
+                winningOption,
+                totalStakedByWinners,
+                totalStakedByLosers,
+                "0x" + winningTree.rootHash,
+                "0x" + losingTree.rootHash
+              );
+              console.log(await tx.estimateGas());
+              tx
+                .send({
+                  from: accounts[0],
+                  gas: 1000000
+                })
+                .on("transactionHash", (hash: string) => {
+                  console.log("Transaction hash: ", hash);
+                })
+                .on("receipt", (receipt: any) => {
+                  resolve(receipt.events.RoundResultsUpdate.returnValues);
+                })
+                .on("confirmation", () => {
+                  console.log("Confirmed.");
+                });
+            }
+          );
 
-        console.log("Successfully revealed round", result.roundId);
+          console.log("Successfully revealed round", result.roundId);
+        } else {
+          console.log("Round already revealed.");
+        }
+
+        for (let prediction of winners) {
+          console.log(
+            "Winner proof: ",
+            checkProof(
+              winningTree.rootHash,
+              prediction.user,
+              winningTree.proof(prediction.user)
+            )
+          );
+          const reward = await contracts.daily.methods
+            .getUserRewardPerRound(
+              prediction.user,
+              roundId,
+              winningTree.proof(prediction.user).map(hash => "0x" + hash)
+            )
+            .call();
+          console.log(
+            `Winner ${prediction.user}:`,
+            toOutput(reward) + "/" + toOutput(new BN(prediction.stake))
+          );
+        }
+
+        for (let prediction of losers) {
+          console.log(
+            "Loser proof: ",
+            checkProof(
+              losingTree.rootHash,
+              prediction.user,
+              losingTree.proof(prediction.user)
+            )
+          );
+          const reward = await contracts.daily.methods
+            .getUserRewardPerRound(
+              prediction.user,
+              roundId,
+              losingTree.proof(prediction.user).map(hash => "0x" + hash)
+            )
+            .call();
+          console.log(
+            `Loser  ${prediction.user}:`,
+            toOutput(reward) + "/" + toOutput(new BN(prediction.stake))
+          );
+        }
 
         process.exit(0);
       } catch (e) {
